@@ -1,0 +1,33 @@
+.tab-header {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .tab-button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 12px 4px;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+  }
+  
+  .tab-button.active {
+    font-weight: 500;
+  }
+
+  .tab-button:hover {
+    background-color: rgba(200, 200, 200, 0.1);
+  }
+  
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: #9e2223;
+  }
+  

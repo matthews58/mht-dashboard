@@ -1,0 +1,79 @@
+@if (!coachInvites()) {
+    <div class="d-flex justify-content-center my-4">
+        <mat-spinner></mat-spinner>
+    </div>
+}
+@else {
+    <mat-toolbar color="primary" class="justify-content-between">
+        <div class="flex gap-3 align-items-center">
+            <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                <mat-icon matIconPrefix>search</mat-icon>
+                <mat-label>Search</mat-label>
+                <input matInput (input)="filterText.set($any($event.target).value)">
+            </mat-form-field>
+        </div>
+
+        <button matButton="elevated" (click)="invitePlayers()">
+            <mat-icon>mail</mat-icon>
+            Invite Players
+        </button>
+    </mat-toolbar>
+
+    <div class="mat-elevation-z8">
+        <table mat-table [dataSource]="dataSource()" matSort>
+    
+            <ng-container matColumnDef="player">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Player </th>
+                <td mat-cell *matCellDef="let invite"> {{invite.player}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Email </th>
+                <td mat-cell *matCellDef="let invite"> {{invite.email}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="team">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Team </th>
+                <td mat-cell *matCellDef="let invite"> {{invite.team}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Status </th>
+                <td mat-cell *matCellDef="let invite">
+                    @if (invite.status === 'Pending') {
+                        <span class="badge bg-secondary">Pending</span>
+                    }
+                    @else {
+                        <span class="badge bg-success">Accepted</span>
+                    }
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="invitedAt">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Invited At </th>
+                <td mat-cell *matCellDef="let invite"> {{invite.invitedAt | date:'M/d/yy h:mm a'}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acceptedAt">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Accepted At </th>
+                <td mat-cell *matCellDef="let invite"> {{invite.acceptedAt | date:'M/d/yy h:mm a'}} </td>
+            </ng-container>
+    
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    
+            <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell text-center" colspan="7">
+                    <div class="my-4 text-muted">
+                        <strong><i>No coach invites yet</i></strong>
+                        <p class="mb-0">
+                            When a player is invited to one of your teams, it will appear here.
+                        </p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    
+        <mat-paginator [pageSizeOptions]="[10, 20, 30]" aria-label="Select page of invites"></mat-paginator>
+    </div>
+}

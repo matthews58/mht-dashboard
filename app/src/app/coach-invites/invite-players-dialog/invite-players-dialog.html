@@ -1,0 +1,58 @@
+<h2 mat-dialog-title>Invite Players</h2>
+
+<mat-dialog-content>
+  <p class="body">Search for an existing user or type an email to add a new invitee.</p>
+
+  <mat-form-field class="full-width" appearance="outline">
+    <mat-label>Players</mat-label>
+    <mat-chip-grid #chipGrid aria-label="Selected invitees">
+      <mat-chip-row
+        *ngFor="let invitee of invitees(); trackBy: trackInvitee"
+        [removable]="true"
+        (removed)="removeInvitee(invitee)"
+      >
+        <mat-icon matChipAvatar>person</mat-icon>
+        <div class="chip-text">
+          <span class="name" *ngIf="invitee.type === 'existing'">{{ invitee.name }}</span>
+          <span class="email">{{ invitee.email }}</span>
+          <span class="tag" *ngIf="invitee.type === 'new'">new</span>
+        </div>
+        <button matChipRemove type="button" aria-label="Remove invitee">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-chip-row>
+
+      <input
+        [formControl]="inputControl"
+        placeholder="Type a name or email"
+        [matChipInputFor]="chipGrid"
+        [matChipInputSeparatorKeyCodes]="separatorKeys"
+        (matChipInputTokenEnd)="handleChipInput($event)"
+        [matAutocomplete]="auto"
+        cdkFocusInitial
+      />
+    </mat-chip-grid>
+
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectExisting($event)">
+      <mat-option *ngFor="let user of filteredUsers()" [value]="user">
+        <div class="option-text">
+          <span class="name">{{ user.fullName }}</span>
+          <span class="email">{{ user.email }}</span>
+        </div>
+      </mat-option>
+
+      <mat-option *ngIf="canAddNewEmail()" (onSelectionChange)="addEmailFromInput()">
+        Add new invitee: {{ inputValue().trim() }}
+      </mat-option>
+    </mat-autocomplete>
+
+    <mat-hint *ngIf="!filteredUsers().length && !canAddNewEmail()">
+      Start typing to search users or enter a new email.
+    </mat-hint>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="!invitees().length">Send invites</button>
+</mat-dialog-actions>

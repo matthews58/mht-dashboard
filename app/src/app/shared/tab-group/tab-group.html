@@ -1,0 +1,9 @@
+<div class="tab-header">
+    @for (tab of tabs(); track tab) {
+        <button class="tab-button" type="button" [class.active]="tab.id === active()" (click)="select(tab.id)">
+            {{ tab.label }}
+        </button>
+    }
+</div>
+
+<ng-content />
