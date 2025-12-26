@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Dashboard } from './dashboard/dashboard';
+import { MatIconRegistry } from '@angular/material/icon';
 
 @Component({
   selector: 'app-root',
@@ -9,4 +10,9 @@ import { Dashboard } from './dashboard/dashboard';
   styleUrl: './app.scss',
 })
 export class App {
+  private matIconRegistry = inject(MatIconRegistry);
+
+  constructor() {
+    this.matIconRegistry.setDefaultFontSetClass('material-icons');
+  }
 }

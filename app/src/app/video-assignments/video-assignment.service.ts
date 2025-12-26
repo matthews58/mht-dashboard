@@ -1,16 +1,10 @@
-import { HttpClient, HttpHeaders } from "@angular/common/http";
-import { Injectable, inject } from "@angular/core";
-import { Observable } from "rxjs";
-import { getWpConfig } from "../shared/wp-config";
-
-export interface User {
-  id: string;
-  fullName: string;
-  email: string;
-}
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { getWpConfig } from '../shared/wp-config';
+import { VideoAssignmentsResponse } from './video-assignment';
 
 @Injectable({ providedIn: 'root' })
-export class UserService {
+export class VideoAssignmentService {
   #http = inject(HttpClient);
 
   private wpConfig = getWpConfig();
@@ -27,10 +21,11 @@ export class UserService {
     return new HttpHeaders(headers);
   }
 
-  getUsers(): Observable<User[]> {
-    return this.#http.get<User[]>(`${this.wpConfig.restUrl}/mht-dashboard/v1/users`, {
+  getVideoAssignments() {
+    return this.#http.get<VideoAssignmentsResponse>(`${this.wpConfig.restUrl}/mht-dashboard/v1/video-assignments`, {
       headers: this.headers,
       withCredentials: true,
     });
   }
+
 }

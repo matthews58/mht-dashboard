@@ -1,4 +1,39 @@
 mat-toolbar {
     height: 5rem;
-    background-color: #efe9e9;
+    background-color: #e1e6ec;
+}
+
+.invite-table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    mat-toolbar.invite-toolbar {
+        height: auto;
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .invite-toolbar-group {
+        width: 100%;
+    }
+
+    .invite-search-field {
+        width: 100%;
+    }
+
+    .invite-action-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mat-column-player,
+    .mat-column-acceptedAt {
+        display: none;
+    }
 }

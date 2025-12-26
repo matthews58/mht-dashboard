@@ -1,35 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, Signal, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatChipsModule, MatChipInputEvent } from '@angular/material/chips';
+import { MatChipsModule, MatChipInputEvent, MatChipInput } from '@angular/material/chips';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { ENTER } from '@angular/cdk/keycodes';
+import { MatSelectModule } from '@angular/material/select';
+import { Team } from '../../teams/team.service';
+import { User } from '../../users/user.service';
+import { CoachInviteStore } from '../coach-invite.store';
+import { SendCoachInviteRequest } from '../coach-invite';
+import { filter } from 'rxjs';
+import { SnackbarService } from '../../shared/snackbar/snackbar.service';
 
-export interface InvitePlayerForm {
-  teamId: number;
-  invitees: Invitee[];
-}
-
-type Invitee =
-  | { type: 'existing'; userId: string; email: string; name: string }
-  | { type: 'new'; email: string };
-
-export interface ExistingUser {
-  id: string;
-  fullName: string;
+type Invitee = {
+  type: 'existing' | 'new';
   email: string;
-}
-
-export interface InvitePlayersDialogData {
-  teamId?: number;
-  existingUsers?: ExistingUser[];
-}
+  playerId?: string;
+  fullName?: string;
+};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -45,56 +39,88 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
     MatAutocompleteModule,
     MatIconModule,
     MatButtonModule,
+    MatSelectModule,
   ],
   templateUrl: './invite-players-dialog.html',
   styleUrl: './invite-players-dialog.scss',
 })
 export class InvitePlayersDialog {
-  #dialogRef = inject(MatDialogRef<InvitePlayersDialog, InvitePlayerForm>);
-  #data = inject(MAT_DIALOG_DATA, { optional: true }) as InvitePlayersDialogData | null;
+  #coachInviteStore = inject(CoachInviteStore);
+  #dialogRef = inject(MatDialogRef);
+  #snackBar = inject(SnackbarService);
+  
+  #data: { users: Signal<User[]>; teams: Signal<Team[]> } = inject(MAT_DIALOG_DATA);
+  chipInput = viewChild<MatChipInput>('chipInput');
 
-  teamId = this.#data?.teamId ?? 0;
-  existingUsers = signal<ExistingUser[]>(this.#data?.existingUsers ?? []);
+  invitees = signal<Invitee[]>([]);
+  teams = this.#data.teams;
+  teamControl = new FormControl<string | null>(
+    this.#data.teams.length === 1 ? this.#data.teams()[0].id : null
+  );
 
   inputControl = new FormControl('', { nonNullable: true });
   inputValue = toSignal(this.inputControl.valueChanges, { initialValue: '' });
 
-  invitees = signal<Invitee[]>([]);
-
-  separatorKeys = [ENTER, COMMA];
+  separatorKeys = [ENTER];
 
   filteredUsers = computed(() => {
-    const term = this.inputValue().trim().toLowerCase();
+    const term = this.#getInputText().trim().toLowerCase();
     const selectedEmails = new Set(this.invitees().map((i) => i.email.toLowerCase()));
 
-    return this.existingUsers().filter(
-      (user) =>
-        !selectedEmails.has(user.email.toLowerCase()) &&
-        (!term ||
-          user.fullName.toLowerCase().includes(term) ||
-          user.email.toLowerCase().includes(term))
-    );
+    return this.#data
+      .users()
+      .filter(
+        (user) =>
+          !selectedEmails.has(user.email.toLowerCase()) &&
+          (!term ||
+            user.fullName.toLowerCase().includes(term) ||
+            user.email.toLowerCase().includes(term))
+      );
   });
 
-  canAddNewEmail = computed(() => this.#canUseEmail(this.inputValue().trim()));
+  canAddNewEmail = computed(() => this.#canUseEmail(this.#getInputText().trim()));
 
-  selectExisting(event: MatAutocompleteSelectedEvent) {
-    const user = event.option.value as ExistingUser | undefined;
-    if (!user) return;
+  constructor() {
+    this.#coachInviteStore.events
+      .pipe(
+        filter((e) => e.type === 'invite-sent' || e.type === 'invite-failed'),
+        takeUntilDestroyed()
+      )
+      .subscribe(e => {
+        if (e.type === 'invite-failed') {
+          this.#snackBar.error(e.error);
+          return;
+        }
 
-    this.invitees.update((list) => [
-      ...list,
-      { type: 'existing', userId: user.id, email: user.email, name: user.fullName },
-    ]);
-    this.inputControl.setValue('');
+        if (e.type === 'invite-sent') {
+          this.#snackBar.success('Invites sent successfully');
+          this.#dialogRef.close();
+        }
+      });
   }
 
-  addEmailFromInput() {
-    const value = this.inputValue().trim();
+  handleOptionSelected(event: MatAutocompleteSelectedEvent) {
+    const value = event.option.value;
+    if (typeof value === 'string') {
+      this.addEmailFromInput(value);
+    } else {
+      const user = value as User;
+      this.invitees.update((list) => [
+        ...list,
+        { type: 'existing', email: user.email, playerId: user.id, fullName: user.fullName },
+      ]);
+    }
+
+    this.#resetInput();
+  }
+
+  addEmailFromInput(email?: string) {
+    const value = (email ?? this.#getInputText()).trim();
+
     if (!this.#canUseEmail(value)) return;
 
     this.invitees.update((list) => [...list, { type: 'new', email: value }]);
-    this.inputControl.setValue('');
+    this.#resetInput();
   }
 
   handleChipInput(event: MatChipInputEvent) {
@@ -104,7 +130,7 @@ export class InvitePlayersDialog {
     }
 
     event.chipInput?.clear();
-    this.inputControl.setValue('');
+    this.#resetInput();
   }
 
   removeInvitee(invitee: Invitee) {
@@ -112,14 +138,19 @@ export class InvitePlayersDialog {
   }
 
   submit() {
-    if (!this.invitees().length) {
+    if (!this.invitees().length || !this.teamControl.value) {
       return;
     }
 
-    this.#dialogRef.close({
-      teamId: this.teamId,
-      invitees: this.invitees(),
-    });
+    const request: SendCoachInviteRequest = {
+      teamId: this.teamControl.value,
+      invites: this.invitees().map((invitee) => ({
+        player: invitee.playerId,
+        email: invitee.email,
+      })),
+    };
+
+    this.#coachInviteStore.sendInvites(request);
   }
 
   trackInvitee(_: number, invitee: Invitee) {
@@ -130,8 +161,20 @@ export class InvitePlayersDialog {
     if (!value || !EMAIL_REGEX.test(value)) return false;
     const lower = value.toLowerCase();
     return (
-      !this.existingUsers().some((user) => user.email.toLowerCase() === lower) &&
+      !this.#data.users().some((user) => user.email.toLowerCase() === lower) &&
       !this.invitees().some((invitee) => invitee.email.toLowerCase() === lower)
     );
+  }
+
+  #getInputText() {
+    const value = this.inputValue();
+    return typeof value === 'string' ? value : '';
+  }
+
+  #resetInput() {
+    setTimeout(() => {
+      this.inputControl.reset('', { emitEvent: true });
+      this.chipInput()?.clear();
+    }, 0);
   }
 }

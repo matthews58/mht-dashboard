@@ -1,24 +1,17 @@
-@if (isLoading()) {
-    <div class="d-flex justify-content-center">
-        <mat-spinner></mat-spinner>
-    </div>
-}
-@else if (error()) {
-    <div class="d-flex justify-content-center alert alert-danger my-5">
-        {{ error() }}
-    </div>
-}
-@else {
-    <app-tab-group [tabs]="[
-            { id: 'invites', label: 'Coach Invites' },
-            { id: 'videos', label: 'Video Assignments' }
-        ]">
-        <app-tab id="invites">
-            <app-coach-invite-list [coachInvites]="coachInvites()"></app-coach-invite-list>
-        </app-tab>
-    
-        <app-tab id="videos">
-            <p>Videos go here!</p>
-        </app-tab>
-    </app-tab-group>
-}
+<app-tab-group [tabs]="[
+        { id: 'invites', label: 'Coach Invites' },
+        { id: 'videos', label: 'Video Assignments' },
+        { id: 'players', label: 'Players' },
+    ]">
+    <app-tab id="invites">
+        <app-coach-invite-list />
+    </app-tab>
+
+    <app-tab id="videos">
+        <app-video-assignment-list />
+    </app-tab>
+
+    <app-tab id="players">
+        <app-player-list />
+    </app-tab>
+</app-tab-group>

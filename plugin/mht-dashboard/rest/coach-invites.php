@@ -15,23 +15,17 @@ add_action('rest_api_init', function () {
     $user = wp_get_current_user();
   
     if (in_array('administrator', $user->roles, true)) {
-      return query_all_invites();
+      return rest_ensure_response(query_all_invites());
     }
 
     if (in_array('um_coach', $user->roles, true)) {
       $team_ids = get_team_ids_for_coach($user->ID);
       
       if (!is_array($team_ids) || empty($team_ids)) {
-        error_log(sprintf(
-          '[coach-invites] No teams for coach. user_id=%d roles=%s',
-          $user->ID,
-          implode(',', $user->roles)
-        ));
-
-        return [];
+        return rest_ensure_response([]);
       }
     
-      return query_invites_for_teams($team_ids);
+      return rest_ensure_response(query_invites_for_teams($team_ids));
     }
 
     return new WP_Error(
@@ -100,12 +94,12 @@ add_action('rest_api_init', function () {
       $player_id = get_post_meta($post_id, 'invite_player', true);
 
       $data[] = [
-        'player' => $player_map[$player_id] ?? 'Unknown Player',
+        'player' => $player_map[$player_id] ?? '',
         'email' => get_post_meta($post_id, "invite_email", true),
-        'team' => $team_map[$team_id] ?? 'Unknown Team',
+        'team' => $team_map[$team_id] ?? '',
         'status' => get_post_meta($post_id, "invite_status", true),
-        'invitedAt' => get_post_meta($post_id, "invited_at", true),
-        'acceptedAt' => get_post_meta($post_id, "accepted_at", true) ?: null
+        'invitedAt' => format_coach_invite_iso_datetime(get_post_meta($post_id, "invited_at", true) ?? null),
+        'acceptedAt' => format_coach_invite_iso_datetime(get_post_meta($post_id, "accepted_at", true) ?? null),
       ];
     }
 
@@ -166,13 +160,22 @@ add_action('rest_api_init', function () {
 
     $map = [];
     foreach ($users as $user) {
-        $full_name = trim($user->first_name . ' ' . $user->last_name);
-
-        $map[$user->ID] = $full_name !== ''
-            ? $full_name
-            : $user->display_name;
+        $map[$user->ID] = $user->display_name;
     }
 
     return $map;
+  }
+
+  function format_coach_invite_iso_datetime($value) {
+    if (!$value) {
+      return null;
+    }
+
+    $timestamp = strtotime($value);
+    if ($timestamp === false) {
+      return null;
+    }
+
+    return gmdate('Y-m-d\\TH:i:s\\Z', $timestamp);
   }
 });

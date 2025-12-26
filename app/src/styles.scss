@@ -10,7 +10,54 @@
 :root {
   --wp--preset--spacing--80: 1rem;
   --wp--style--global--content-size: 100%;
+
+  --primary-color: #a52727;
+  --accent-color: #2b72a1;
+  --warn-color: #e0120e;
+
+  --mat-sys-primary: #a52727;
+  --mat-sys-on-primary: #ffffff;
+
+  --mat-sys-tertiary: #a52727;
+  --mat-sys-on-tertiary: #ffffff;
+
+  /* Surfaces */
+  --mat-sys-surface: #ffffff;
+  --mat-sys-surface-container: #f5f6f8;
+  --mat-sys-surface-container-high: #eef1f4;
+  --mat-sys-on-surface: #1b1f24;
+
+  /* Outlines */
+  --mat-sys-outline: #c4cbd3;
+  --mat-sys-outline-variant: #e1e6ec;
 }
+
+@mixin snackbar($type) {
+	.mdc-snackbar__surface {
+		background-color: var(--#{$type}-color) !important;
+	}
+
+	.mdc-button__label {
+		:hover {
+			text-decoration: underline;
+		}
+	}
+
+	.mdc-button__label:hover {
+		text-decoration: underline;
+	}
+}
+
+.snackbar {
+	&--primary {
+		@include snackbar(primary);
+	}
+
+	&--warn {
+		@include snackbar(warn)
+	}
+}
+
 
 html {
   @include mat.theme((

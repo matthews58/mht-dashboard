@@ -5,13 +5,14 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { DatePipe } from '@angular/common';
-import { CoachInvite } from '../coach-invite';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { InvitePlayersDialog } from '../invite-players-dialog/invite-players-dialog';
+import { UserStore } from '../../users/user.store';
+import { TeamStore } from '../../teams/team.store';
+import { CoachInviteStore } from '../coach-invite.store';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-coach-invite-list',
@@ -22,28 +23,32 @@ import { InvitePlayersDialog } from '../invite-players-dialog/invite-players-dia
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
-    MatIconModule,
     MatToolbarModule,
     MatButtonModule,
-    DatePipe,
+    MatIconModule,
   ],
   templateUrl: './coach-invite-list.html',
   styleUrl: './coach-invite-list.scss',
 })
 export class CoachInviteList {
+  #coachInviteStore = inject(CoachInviteStore);
+  #userStore = inject(UserStore);
+  #teamStore = inject(TeamStore);
   #dialogService = inject(MatDialog);
-
-  coachInvites = input<CoachInvite[]>();
 
   paginator = viewChild(MatPaginator);
   sort = viewChild(MatSort);
-  displayedColumns = ['player', 'email', 'team', 'status', 'invitedAt', 'acceptedAt'];
+  displayedColumns = ['player', 'email', 'team', 'status'];
 
   filterText = signal('');
 
+  invites = this.#coachInviteStore.coachInvites;
+  isLoading = this.#coachInviteStore.isLoading;
+  error = this.#coachInviteStore.error;
+
   filteredInvites = computed(() => {
     const filter = this.filterText().toLowerCase();
-    const invites = this.coachInvites();
+    const invites = this.invites();
     if (!invites) {
       return [];
     }
@@ -62,11 +67,20 @@ export class CoachInviteList {
     return invites;
   });
 
+  constructor() {
+    this.#coachInviteStore.load();
+  }
+
   invitePlayers() {
     this.#dialogService.open(InvitePlayersDialog, {
-      width: '400px',
+      autoFocus: false,
+      disableClose: true,
+      width: '500px',
       maxWidth: '100vw',
-      maxHeight: 'min(100vh, 400px)',
+      data: {
+        users: this.#userStore.users,
+        teams: this.#teamStore.teams,
+      },
     });
   }
 }

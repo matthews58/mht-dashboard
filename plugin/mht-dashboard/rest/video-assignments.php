@@ -2,85 +2,118 @@
 if (!defined('ABSPATH')) exit;
 
 add_action('rest_api_init', function () {
-    register_rest_route('mht-dashboard/v1', '/video-assignments', [
-        'methods' => 'GET',
-        'callback' => function () {
-            $posts = get_posts([
-                'post_type' => 'video_assignment',
-                'posts_per_page' => -1,
-                'suppress_filters' => false,
-                'post_status'    => 'any'
-            ]);
 
-            return array_map(function($post) {
-              $video_file_id = get_field('video_file', $post->ID);
-              $video_url = wp_get_attachment_url($video_file_id);
+  register_rest_route('mht-dashboard/v1', '/video-assignments', [
+    'methods'  => 'GET',
+    'callback' => 'mht_get_video_assignments',
+    'permission_callback' => function () {
+      return is_user_logged_in();
+    }
+  ]);
 
-              $assigned_player_ids = get_field('assigned_players', $post->ID, true);
-              $managing_coach_ids = get_field('managing_coaches', $post->ID, true);
-
-              return [
-                  'id' => $post->ID,
-                  'createdAt' => $post->post_date,
-                  'title' => get_field('video_title', $post->ID) ?: '',
-                  'description' => get_field('video_description', $post->ID) ?: '',
-                  'videoUrl' => $video_url,
-                  'coaches' => getCoachNames($managing_coach_ids),
-                  'playerAnswers' => getPlayerAnswers($post->ID, $assigned_player_ids),
-                  'quizQuestions' => get_field('quiz_questions', $post->ID) ?: []
-              ];
-          }, $posts);
-        },
-        'permission_callback' => function() {
-            return is_user_logged_in();
-        }
-    ]);
 });
 
-function getCoachNames($managing_coach_ids) {
-  $managing_coaches = [];
+function mht_get_video_assignments() {
+  $user = wp_get_current_user();
 
-  foreach ($managing_coach_ids as $coach_id) {
-      $user = get_userdata($coach_id);
-      if ($user) {
-          $managing_coaches[] = trim($user->first_name . ' ' . $user->last_name);
-      }
+  if (in_array('administrator', $user->roles, true)) {
+    $posts = mht_query_all_video_assignments();
+  } elseif (in_array('um_coach', $user->roles, true)) {
+    $posts = mht_query_video_assignments_for_coach($user->ID);
+  } else {
+    return new WP_Error(
+      'unauthorized_role',
+      'You do not have permission to view this page.',
+      ['status' => 403]
+    );
   }
 
-  return $managing_coaches;
+  return rest_ensure_response([
+    'videos' => array_map('mht_map_video_assignment', $posts)
+  ]);
 }
 
-function getPlayerAnswers($postId, $assigned_player_ids) {
-  $raw_answers = get_post_meta($postId, 'mht_player_answers', true);
+function mht_query_all_video_assignments() {
+  return get_posts([
+    'post_type'      => 'video_assignment',
+    'posts_per_page' => -1,
+    'post_status'    => 'any',
+    'suppress_filters' => false
+  ]);
+}
 
-  $total_questions = 0;
-  while (get_post_meta($postId, "quiz_questions_{$total_questions}_question", true) !== '') {
-      $total_questions++;
+function mht_query_video_assignments_for_coach($coach_id) {
+  return get_posts([
+    'post_type'      => 'video_assignment',
+    'posts_per_page' => -1,
+    'post_status'    => 'any',
+    'suppress_filters' => false,
+    'meta_query' => [[
+      'key'     => 'managing_coaches',
+      'value'   => '"' . $coach_id . '"',
+      'compare' => 'LIKE',
+    ]]
+  ]);
+}
+
+function mht_map_video_assignment($post) {
+  $assignedPlayers = get_post_meta($post->ID, 'assigned_players', true) ?: [];
+  if (!is_array($assignedPlayers)) {
+    $assignedPlayers = [];
   }
 
-  $player_answers = [];
+  $rawAnswers = maybe_unserialize(
+    get_post_meta($post->ID, 'mht_player_answers', true)
+  ) ?: [];
 
-  foreach ($assigned_player_ids as $player_id) {
-      $user = get_userdata($player_id);
-      $answers = !empty($raw_answers[$player_id]) ? $raw_answers[$player_id] : [];
+  // Only supporting 1 question for now (easy to extend later)
+  $question = get_post_meta($post->ID, 'quiz_questions_0_question', true);
 
-      $answers_with_questions = [];
-      for ($i = 0; $i < $total_questions; $i++) {
-          $question = get_post_meta($postId, "quiz_questions_{$i}_question", true) ?: '';
-          $answer = $answers[$i] ?? [];
-          $answers_with_questions[] = [
-              'question'     => $question,
-              'text'         => $answer['text'] ?? null,
-              'isCorrect'   => $answer['is_correct'] ?? false,
-              'submittedAt' => $answer['submitted_at'] ?? null
-          ];
+  $details = [];
+  $answeredCount = 0;
+  $correctCount = 0;
+
+  foreach ($assignedPlayers as $playerId) {
+    $user = get_userdata($playerId);
+
+    $playerName = $user
+      ? trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name
+      : 'Player ' . $playerId;
+
+    $answer = $rawAnswers[$playerId][0] ?? null;
+
+    $answerText  = $answer['text'] ?? null;
+    $isCorrect   = $answer['is_correct'] ?? null;
+    $submittedAt = isset($answer['submitted_at'])
+      ? gmdate('Y-m-d\\TH:i:s\\Z', strtotime($answer['submitted_at']))
+      : null;
+
+    if ($answerText !== null) {
+      $answeredCount++;
+      if ($isCorrect) {
+        $correctCount++;
       }
+    }
 
-      $player_answers[] = [
-          'playerName' => $user ? trim($user->first_name . ' ' . $user->last_name) : 'Unknown Player',
-          'answers'     => $answers_with_questions
-      ];
+    $details[] = [
+      'playerId'    => (string)$playerId,
+      'playerName'  => $playerName,
+      'question'    => $question,
+      'answer'      => $answerText,
+      'isCorrect'   => $answerText !== null ? (bool)$isCorrect : null,
+      'submittedAt'=> $submittedAt
+    ];
   }
 
-  return $player_answers;
+  return [
+    'videoId'         => (string)$post->ID,
+    'title'           => get_post_meta($post->ID, 'video_title', true) ?: '',
+    'createdAt'       => isset($post->post_date_gmt) ? gmdate('Y-m-d\\TH:i:s\\Z', strtotime($post->post_date_gmt)) : null,
+    'playersAssigned' => count($assignedPlayers),
+    'playersAnswered' => $answeredCount,
+    'correctPercent'  => $answeredCount > 0
+      ? round(($correctCount / $answeredCount) * 100)
+      : null,
+    'details'         => $details
+  ];
 }

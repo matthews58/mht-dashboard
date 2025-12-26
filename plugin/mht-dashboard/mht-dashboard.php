@@ -18,27 +18,63 @@ add_filter('rest_authentication_errors', function ($result) {
     return $result;
 });
 
-require_once plugin_dir_path(__FILE__) . 'rest/index.php';
+foreach (glob(plugin_dir_path(__FILE__) . 'rest/*.php') as $file) {
+    require_once $file;
+}
 
-function load_ng_scripts() {                                                                                                                                                                                       
-    wp_enqueue_style( 'ng_styles', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/styles-GADOE2LQ.css' );                                                                                                   
-    wp_register_script( 'ng_main', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/main-GVBKSY57.js', [], null, true );
+function load_ng_scripts() {
+    wp_enqueue_style(
+        'material-icons',
+        'https://fonts.googleapis.com/icon?family=Material+Icons'
+    );                 
+    wp_enqueue_style(
+        'material-symbols',
+        'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined',
+        [],
+        null
+    );                                                                                                                                                                 
+    wp_register_style( 'ng_styles', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/styles-LYXNKTSF.css' );                                                                                                   
+    wp_register_script( 'ng_main', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/main-M7HHU3K7.js', [], null, true );
     
     wp_localize_script(
         'ng_main',
         'MHTData',
         [
-            'restUrl' => home_url('/wp-json/mht-dashboard/v1'),
+            'restUrl' => home_url('/wp-json'),
             'nonce'   => wp_create_nonce('wp_rest')
         ]
     );                                            
 }
 
-add_action( 'wp_enqueue_scripts', 'load_ng_scripts' );                                                                                                                                                             
-                                                                                                                           
-function attach_ng() {                                                                                                                                                                                             
+add_action( 'wp_enqueue_scripts', 'load_ng_scripts' );    
+
+add_action('wp_enqueue_scripts', function () {
+
+    $post = get_post();
+    if (!$post) {
+        return;
+    }
+
+    if (!has_shortcode($post->post_content, 'mht_dashboard')) {
+        return;
+    }
+
+    /**
+     * Ultimate Member scripts/styles
+     * Remove these because Angular owns the UI here
+     */
+    wp_dequeue_script('um-raty');
+    wp_dequeue_script('ultimate-member');
+
+    wp_dequeue_style('um-styles');
+    wp_dequeue_style('um-font-awesome');
+
+}, 100);
+
+function attach_ng() {
+    wp_enqueue_style('ng_styles');                                                                                                                                                                                 
     wp_enqueue_script( 'ng_main' );
     return "<app-root></app-root>";                                                                                                                                                                                
 }                                                                                                                                                                                                                  
                                                                                                                                                                                                                    
-add_shortcode( 'mht-dashboard-1', 'attach_ng' );  
+add_shortcode( 'mht_dashboard', 'attach_ng' );  

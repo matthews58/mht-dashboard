@@ -11,7 +11,7 @@ export function getWpConfig(): WpAppConfig {
   }
 
   return {
-    restUrl: 'http://morrishockeytraining.local/wp-json/mht-dashboard/v1',
+    restUrl: 'http://morrishockeytraining.local/wp-json',
     nonce: '',
   };
 }

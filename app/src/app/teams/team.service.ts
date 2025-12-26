@@ -3,14 +3,13 @@ import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { getWpConfig } from "../shared/wp-config";
 
-export interface User {
+export interface Team {
   id: string;
-  fullName: string;
-  email: string;
+  name: string;
 }
 
 @Injectable({ providedIn: 'root' })
-export class UserService {
+export class TeamService {
   #http = inject(HttpClient);
 
   private wpConfig = getWpConfig();
@@ -27,8 +26,8 @@ export class UserService {
     return new HttpHeaders(headers);
   }
 
-  getUsers(): Observable<User[]> {
-    return this.#http.get<User[]>(`${this.wpConfig.restUrl}/mht-dashboard/v1/users`, {
+  getTeams(): Observable<Team[]> {
+    return this.#http.get<Team[]>(`${this.wpConfig.restUrl}/mht-dashboard/v1/teams`, {
       headers: this.headers,
       withCredentials: true,
     });

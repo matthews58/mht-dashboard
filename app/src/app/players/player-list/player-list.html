@@ -1,0 +1,109 @@
+@if (isLoading()) {
+<div class="d-flex justify-content-center my-4">
+    <mat-spinner />
+</div>
+}
+@else if (error()) {
+<div class="d-flex justify-content-center alert alert-danger my-5">
+    {{ error() }}
+</div>
+}
+@else {
+<div class="shadow">
+    <mat-toolbar>
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-label>Search</mat-label>
+            <input matInput (input)="filterText.set($any($event.target).value)">
+        </mat-form-field>
+    </mat-toolbar>
+    <div class="player-assignments-table-wrapper">
+        <table mat-table [dataSource]="dataSource()" matSort multiTemplateDataRows>
+
+            <ng-container matColumnDef="player">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Player </th>
+                <td mat-cell *matCellDef="let player"> {{player.playerName}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="videosCompleted">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Completed </th>
+                <td mat-cell *matCellDef="let player"> {{player.videosCompleted}}/{{player.videosAssigned}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="correctPercent">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Accuracy </th>
+                <td mat-cell *matCellDef="let player"> {{player.correctPercent != null ? (player.correctPercent + '%') :
+                    ''}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="expand">
+                <th mat-header-cell *matHeaderCellDef>&nbsp;</th>
+                <td mat-cell *matCellDef="let video">
+                    <button matIconButton (click)="toggleRow(video); $event.stopPropagation()" class="toggle-button"
+                        [class.toggle-button-expanded]="isExpanded() === video">
+                        <mat-icon>keyboard_arrow_down</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="expandedDetail">
+                <td mat-cell *matCellDef="let video" [attr.colspan]="displayedColumns.length">
+                    <div class="player-detail-wrapper" [class.player-detail-wrapper-expanded]="isExpanded() === video">
+                        <table mat-table [dataSource]="expandedElementDataSource()" class="answers-table">
+                            <ng-container matColumnDef="title">
+                                <th mat-header-cell *matHeaderCellDef>Title</th>
+                                <td mat-cell *matCellDef="let details">{{ details.videoTitle }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="question">
+                                <th mat-header-cell *matHeaderCellDef>Question</th>
+                                <td mat-cell *matCellDef="let details">{{ details.question }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="answer">
+                                <th mat-header-cell *matHeaderCellDef>Answer</th>
+                                <td mat-cell *matCellDef="let details">{{ details.answer }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="result">
+                                <th mat-header-cell *matHeaderCellDef>Result</th>
+                                <td mat-cell *matCellDef="let details">
+                                    @if (details.answer != null) {
+                                    <h6 class="mb-0">
+                                        <span class="badge" [ngClass]="details.isCorrect ? 'bg-success' : 'bg-danger'">
+                                            {{ details.isCorrect ? 'Correct' : 'Incorrect' }}
+                                        </span>
+                                    </h6>
+                                    }
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="submittedAt">
+                                <th mat-header-cell *matHeaderCellDef>Submitted At</th>
+                                <td mat-cell *matCellDef="let details">{{ details.submittedAt }}</td>
+                            </ng-container>
+
+                            <tr mat-header-row *matHeaderRowDef="answerColumns"></tr>
+                            <tr mat-row *matRowDef="let row; columns: answerColumns;"></tr>
+                        </table>
+                    </div>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="player-row"
+                [class.expanded-row]="isExpanded() === row" (click)="toggleRow(row)"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="player-detail-row"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell text-center" [attr.colspan]="displayedColumns.length">
+                    <div class="my-4 text-muted">
+                        <strong><i>No players</i></strong>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+}
+    

@@ -8,9 +8,9 @@ import { UserService } from "./user.service";
 export class UserStore {
   #userService = inject(UserService);
 
-  userResource = resource({
-    loader: () => firstValueFrom(this.#userService.getUser()),
+  usersResource = resource({
+    loader: () => firstValueFrom(this.#userService.getUsers()),
   });
 
-  user = computed(() => (this.userResource.hasValue() ? this.userResource.value() : null));
+  users = computed(() => (this.usersResource.value() ?? []));
 }
