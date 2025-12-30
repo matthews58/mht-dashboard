@@ -30,7 +30,7 @@ function load_ng_scripts() {
         null
     );                                                                                                                                                                 
     wp_register_style( 'ng_styles', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/styles-WRO5SBID.css' );                                                                                                   
-    wp_register_script( 'ng_main', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/main-ZCTCMUAJ.js', [], null, true );
+    wp_register_script( 'ng_main', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/main-AO6TCXUO.js', [], null, true );
     
     wp_localize_script(
         'ng_main',

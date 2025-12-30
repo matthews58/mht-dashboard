@@ -63,10 +63,6 @@ export class VideoAssignmentDialog implements OnDestroy {
   #videoObjectUrl: string | null = null;
   videoElement = viewChild<ElementRef<HTMLVideoElement>>('previewVideo');
 
-  eff = effect(() => {
-    console.log('video assignment form model', this.videoAssignmentFormModel());
-  });
-
   separatorKeys = [ENTER];
 
   playerInputText = signal('');

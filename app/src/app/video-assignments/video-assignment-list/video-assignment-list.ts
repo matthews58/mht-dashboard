@@ -102,7 +102,6 @@ export class VideoAssignmentList {
   }
 
   previewVideo(video: VideoAssignment) {
-    console.log('preview video assignment', video);
     this.#dialogService.open(VideoAssignmentPreviewDialog, {
       autoFocus: false,
       disableClose: true,
