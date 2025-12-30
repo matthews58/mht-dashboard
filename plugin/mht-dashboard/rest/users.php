@@ -21,10 +21,21 @@ function mht_get_users() {
   ]);
 
   $results = array_map(function ($user) {
+
+    $caps = get_user_meta($user->ID, 'wp_capabilities', true);
+
+    $roles = [];
+    if (is_array($caps)) {
+      $roles = array_keys(
+        array_filter($caps, fn($enabled) => $enabled === true)
+      );
+    }
+
     return [
-      'id' => (string) $user->ID,
-      'email' => $user->user_email,
-      'fullName' => $user->display_name
+      'id'       => (string) $user->ID,
+      'email'    => $user->user_email,
+      'fullName' => $user->display_name,
+      'roles'    => $roles,
     ];
   }, $users);
 

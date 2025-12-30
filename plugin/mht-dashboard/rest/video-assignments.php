@@ -2,7 +2,6 @@
 if (!defined('ABSPATH')) exit;
 
 add_action('rest_api_init', function () {
-
   register_rest_route('mht-dashboard/v1', '/video-assignments', [
     'methods'  => 'GET',
     'callback' => 'mht_get_video_assignments',
@@ -101,19 +100,42 @@ function mht_map_video_assignment($post) {
       'question'    => $question,
       'answer'      => $answerText,
       'isCorrect'   => $answerText !== null ? (bool)$isCorrect : null,
-      'submittedAt'=> $submittedAt
+      'submittedAt' => $submittedAt
     ];
   }
 
+  $choices = [];
+  $choices_count = intval(get_post_meta($post->ID, 'quiz_questions_0_choices', true));
+  for ($i = 0; $i < $choices_count; $i++) {
+    $choices[] = [
+      'choiceText' => get_post_meta($post->ID, "quiz_questions_0_choices_{$i}_choice_text", true),
+      'isCorrect' => (bool) get_post_meta($post->ID, "quiz_questions_0_choices_{$i}_is_correct", true),
+    ];
+  }
+
+  $quizQuestion = [
+    'pauseTime'  => get_post_meta($post->ID, 'quiz_questions_0_pause_time', true),
+    'question' => $question,
+    'choices' => $choices,
+    'explanation' => get_post_meta($post->ID, 'quiz_questions_0_explanation', true) ?: '',
+  ];
+
   return [
-    'videoId'         => (string)$post->ID,
+    'id'              => (string)$post->ID,
+    'videoUrl'        => wp_get_attachment_url(get_post_meta($post->ID, 'video_file', true)),
     'title'           => get_post_meta($post->ID, 'video_title', true) ?: '',
+    'description'     => get_post_meta($post->ID, 'video_description', true) ?: '',
     'createdAt'       => isset($post->post_date_gmt) ? gmdate('Y-m-d\\TH:i:s\\Z', strtotime($post->post_date_gmt)) : null,
     'playersAssigned' => count($assignedPlayers),
     'playersAnswered' => $answeredCount,
     'correctPercent'  => $answeredCount > 0
       ? round(($correctCount / $answeredCount) * 100)
       : null,
-    'details'         => $details
+    'details'         => $details,
+    'assignedPlayers' => $assignedPlayers,
+    'managingCoaches' => get_post_meta($post->ID, 'managing_coaches', true) ?: [],
+    'quizQuestion'    => $quizQuestion,
+    'startTime'       => get_post_meta($post->ID, 'video_start_time', true),
+    'endTime'         => get_post_meta($post->ID, 'video_end_time', true),
   ];
 }
