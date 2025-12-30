@@ -76,11 +76,6 @@ export class CoachInviteStore {
         this.#events.next({ type: 'invite-sent', invites: newInvites });
       },
       error: (err: HttpErrorResponse) => {
-        patchState(this.#state, {
-          error: err.error?.message ?? 'Failed to send invites',
-          isLoading: false,
-        });
-
         this.#events.next({
           type: 'invite-failed',
           error: err.error?.message ?? 'Failed to send invites',

@@ -13,6 +13,6 @@ export class App {
   private matIconRegistry = inject(MatIconRegistry);
 
   constructor() {
-    this.matIconRegistry.setDefaultFontSetClass('material-icons');
+    this.matIconRegistry.setDefaultFontSetClass('material-symbols-outlined');
   }
 }

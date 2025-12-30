@@ -16,9 +16,9 @@
       <mat-label>Search</mat-label>
       <input matInput (input)="filterText.set($any($event.target).value)">
     </mat-form-field>
-    <button matButton="elevated" class="flex-grow-1 flex-sm-grow-0" (click)="addVideo()">
+    <button matButton="elevated" class="flex-grow-1 flex-sm-grow-0" (click)="openVideoAssignmentDialog()">
       <mat-icon>add</mat-icon>
-      Add Video
+      Create Video Assignment
     </button>
   </mat-toolbar>
   <div class="video-assignments-table-wrapper">
@@ -51,6 +51,20 @@
             [class.toggle-button-expanded]="isExpanded() === video">
             <mat-icon>keyboard_arrow_down</mat-icon>
           </button>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let video">
+          <div class="action-buttons">
+            <button matMiniFab (click)="openVideoAssignmentDialog(video); $event.stopPropagation()">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button matMiniFab (click)="previewVideo(video); $event.stopPropagation()">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </div>
         </td>
       </ng-container>
 

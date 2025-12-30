@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, Signal, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -6,7 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule, MatChipInputEvent, MatChipInput } from '@angular/material/chips';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { ENTER } from '@angular/cdk/keycodes';
@@ -30,7 +29,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 @Component({
   selector: 'app-invite-players-dialog',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -48,9 +46,10 @@ export class InvitePlayersDialog {
   #coachInviteStore = inject(CoachInviteStore);
   #dialogRef = inject(MatDialogRef);
   #snackBar = inject(SnackbarService);
-  
+
   #data: { users: Signal<User[]>; teams: Signal<Team[]> } = inject(MAT_DIALOG_DATA);
   chipInput = viewChild<MatChipInput>('chipInput');
+  autoComplete = viewChild(MatAutocompleteTrigger);
 
   invitees = signal<Invitee[]>([]);
   teams = this.#data.teams;
@@ -86,7 +85,7 @@ export class InvitePlayersDialog {
         filter((e) => e.type === 'invite-sent' || e.type === 'invite-failed'),
         takeUntilDestroyed()
       )
-      .subscribe(e => {
+      .subscribe((e) => {
         if (e.type === 'invite-failed') {
           this.#snackBar.error(e.error);
           return;
@@ -129,7 +128,6 @@ export class InvitePlayersDialog {
       this.invitees.update((list) => [...list, { type: 'new', email: value }]);
     }
 
-    event.chipInput?.clear();
     this.#resetInput();
   }
 
@@ -175,6 +173,7 @@ export class InvitePlayersDialog {
     setTimeout(() => {
       this.inputControl.reset('', { emitEvent: true });
       this.chipInput()?.clear();
+      this.autoComplete()?.openPanel();
     }, 0);
   }
 }

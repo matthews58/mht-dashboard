@@ -20,7 +20,7 @@
     <div class="player-assignments-table-wrapper">
         <table mat-table [dataSource]="dataSource()" matSort multiTemplateDataRows>
 
-            <ng-container matColumnDef="player">
+            <ng-container matColumnDef="playerName">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> Player </th>
                 <td mat-cell *matCellDef="let player"> {{player.playerName}} </td>
             </ng-container>

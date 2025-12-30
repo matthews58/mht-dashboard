@@ -35,7 +35,7 @@ export class PlayerList {
 
   paginator = viewChild(MatPaginator);
   sort = viewChild(MatSort);
-  displayedColumns = ['player', 'videosCompleted', 'correctPercent', 'expand'];
+  displayedColumns = ['playerName', 'videosCompleted', 'correctPercent', 'expand'];
   answerColumns = ['title', 'question', 'answer', 'result', 'submittedAt'];
   expandedElement = signal<PlayerAssignment | null>(null);
   isExpanded = computed(() => this.expandedElement());
@@ -125,7 +125,7 @@ export class PlayerList {
         }
 
         player.details.push({
-          videoId: video.videoId,
+          videoId: video.id,
           videoTitle: video.title,
           question: row.question,
           answer: row.answer,

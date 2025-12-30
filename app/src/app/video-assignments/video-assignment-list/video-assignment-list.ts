@@ -13,6 +13,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { VideoAssignment } from '../video-assignment';
 import { MatDialog } from '@angular/material/dialog';
 import { VideoAssignmentDialog } from '../video-assignment-dialog/video-assignment-dialog';
+import { UserStore } from '../../users/user.store';
+import { VideoAssignmentPreviewDialog } from '../video-assignment-preview-dialog/video-assignment-preview-dialog';
 
 @Component({
   selector: 'app-video-assignment-list',
@@ -33,11 +35,12 @@ import { VideoAssignmentDialog } from '../video-assignment-dialog/video-assignme
 })
 export class VideoAssignmentList {
   #videoAssignmentStore = inject(VideoAssignmentStore);
+  #userStore = inject(UserStore);
   #dialogService = inject(MatDialog);
 
   paginator = viewChild(MatPaginator);
   sort = viewChild(MatSort);
-  displayedColumns = ['title', 'playersResponded', 'correctPercentage', 'createdAt', 'expand'];
+  displayedColumns = ['title', 'playersResponded', 'correctPercentage', 'createdAt', 'expand', 'actions'];
   answerColumns = ['player', 'question', 'answer', 'result', 'submittedAt'];
   expandedElement = signal<VideoAssignment | null>(null);
   isExpanded = computed(() => this.expandedElement());
@@ -81,12 +84,34 @@ export class VideoAssignmentList {
     this.expandedElement.update((current) => (current === row ? null : row));
   }
 
-  addVideo() {
+  openVideoAssignmentDialog(video?: VideoAssignment) {
+    const players = this.#userStore.users().filter((user) => user.roles.includes('um_player'));
+    const coaches = this.#userStore.users().filter((user) => user.roles.includes('um_coach'));
+
     this.#dialogService.open(VideoAssignmentDialog, {
       autoFocus: false,
       disableClose: true,
-      width: '600px',
-      maxWidth: '100vw'
+      width: '650px',
+      maxWidth: '100vw',
+      data: {
+        players,
+        coaches,
+        video
+      },
+    });
+  }
+
+  previewVideo(video: VideoAssignment) {
+    console.log('preview video assignment', video);
+    this.#dialogService.open(VideoAssignmentPreviewDialog, {
+      autoFocus: false,
+      disableClose: true,
+      height: 'min(100vh, 600px)',
+      width: '1000px',
+      maxWidth: '100vw',
+      data: {
+        video,
+      },
     });
   }
 }

@@ -13,7 +13,7 @@
     
     <mat-form-field class="full-width" appearance="outline">
       <mat-label>Players</mat-label>
-      <mat-chip-grid #chipGrid aria-label="Selected invitees">
+      <mat-chip-grid #chipGrid aria-label="Selected players">
         @for(invitee of invitees(); track invitee.email) {
         <mat-chip-row [removable]="true" (removed)="removeInvitee(invitee)">
           <mat-icon matChipAvatar>person</mat-icon>
