@@ -22,19 +22,15 @@ foreach (glob(plugin_dir_path(__FILE__) . 'rest/*.php') as $file) {
     require_once $file;
 }
 
-function load_ng_scripts() {
-    wp_enqueue_style(
-        'material-icons',
-        'https://fonts.googleapis.com/icon?family=Material+Icons'
-    );                 
+function load_ng_scripts() {             
     wp_enqueue_style(
         'material-symbols',
         'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined',
         [],
         null
     );                                                                                                                                                                 
-    wp_register_style( 'ng_styles', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/styles-LYXNKTSF.css' );                                                                                                   
-    wp_register_script( 'ng_main', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/main-M7HHU3K7.js', [], null, true );
+    wp_register_style( 'ng_styles', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/styles-WRO5SBID.css' );                                                                                                   
+    wp_register_script( 'ng_main', plugin_dir_url( __FILE__ ) . 'dist/mht-dashboard/browser/main-AO6TCXUO.js', [], null, true );
     
     wp_localize_script(
         'ng_main',
@@ -72,7 +68,7 @@ add_action('wp_enqueue_scripts', function () {
 }, 100);
 
 function attach_ng() {
-    wp_enqueue_style('ng_styles');                                                                                                                                                                                 
+    wp_enqueue_style( 'ng_styles' );                                                                                                                                                                                 
     wp_enqueue_script( 'ng_main' );
     return "<app-root></app-root>";                                                                                                                                                                                
 }                                                                                                                                                                                                                  

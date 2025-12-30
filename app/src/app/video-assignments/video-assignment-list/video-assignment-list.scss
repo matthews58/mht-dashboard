@@ -8,6 +8,13 @@ mat-toolbar {
   overflow-x: auto;
 }
 
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 tr.video-detail-row {
   height: 0;
 }

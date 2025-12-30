@@ -68,6 +68,13 @@ html {
     typography: Roboto,
     density: 0,
   ));
+
+  @include mat.fab-overrides((
+    small-container-color: #f4e6e6,
+    small-foreground-color: var(--primary-color),
+    small-container-elevation-shadow: var(--mat-sys-level1),
+    small-ripple-color: rgba(165, 39, 39, 0.12),
+  ));
 }
 
 body {
@@ -86,7 +93,6 @@ body {
   // Reset the user agent margin.
   margin: 0;
 }
-/* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

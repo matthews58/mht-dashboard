@@ -7,6 +7,7 @@ export interface User {
   id: string;
   fullName: string;
   email: string;
+  roles: string[];
 }
 
 @Injectable({ providedIn: 'root' })

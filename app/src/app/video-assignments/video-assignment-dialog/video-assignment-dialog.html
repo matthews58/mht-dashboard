@@ -3,47 +3,217 @@
 <mat-dialog-content>
     <div class="py-2">
         <form class="d-flex flex-column gap-4">
-            <div class="d-flex">
-                <button matButton="outlined" (click)="videoSelector.click()" type="button">
-                    Upload Video
-                </button>
-                <input type="file" accept="video/*" class="file-input" #videoSelector (change)="videoSelected($event)" [field]="videoAssignmentForm.url">
-                @if (videoAssignmentForm.url().invalid() && videoAssignmentForm.url().touched()) {
-                    @for (error of videoAssignmentForm.url().errors(); track error.kind) {
-                        <div class="text-danger pt-1">{{ error.message }}</div>
+            <div class="d-flex flex-column gap-3">
+                <div class="sub-header">Coaches</div>
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Managing Coaches*</mat-label>
+                        <mat-chip-grid #coachChipGrid aria-label="Managing coaches">
+                            @for (coach of videoAssignmentFormModel().managingCoaches; track coach.id) {
+                            <mat-chip-row [removable]="true" (removed)="removeCoach(coach.id)">
+                                <mat-icon matChipAvatar>person</mat-icon>
+                                <div class="chip-text">
+                                    <span class="name">{{ coach.fullName }}</span>
+                                </div>
+                                <button matChipRemove type="button" aria-label="Remove coach">
+                                    <mat-icon>close</mat-icon>
+                                </button>
+                            </mat-chip-row>
+                            }
+                
+                            <input #coachChipInput="matChipInput" (input)="coachInputText.set($any($event.target).value)"
+                                (blur)="videoAssignmentForm.managingCoaches().markAsTouched()" placeholder="Type a coach's name"
+                                [matChipInputFor]="coachChipGrid" [matChipInputSeparatorKeyCodes]="separatorKeys"
+                                [matAutocomplete]="coachAutoComplete" #coachAutoCompleteTrigger="matAutocompleteTrigger" />
+                        </mat-chip-grid>
+                
+                        <mat-autocomplete #coachAutoComplete="matAutocomplete" (optionSelected)="handleCoachSelected($event)">
+                            @for (coach of filteredCoaches(); track coach.id) {
+                            <mat-option [value]="coach">
+                                <div class="option-text">
+                                    <span class="me-1">{{ coach.fullName }}</span>
+                                </div>
+                            </mat-option>
+                            <hr class="m-0" />
+                            }
+                        </mat-autocomplete>
+                    </mat-form-field>
+                    @if (videoAssignmentForm.managingCoaches().invalid() && videoAssignmentForm.managingCoaches().touched()) {
+                        @for (error of videoAssignmentForm.managingCoaches().errors(); track error.kind) {
+                            <div class="text-danger pt-1">{{ error.message }}</div>
+                        }
                     }
-                }
+                </div>
             </div>
-            <div class="d-flex flex-column">
-                <mat-form-field subscriptSizing="dynamic" appearance="outline">
-                    <mat-label>Title</mat-label>
-                    <input matInput [field]="videoAssignmentForm.title">
-                </mat-form-field>
-                @if (videoAssignmentForm.title().invalid() && videoAssignmentForm.title().touched()) {
-                    @for (error of videoAssignmentForm.title().errors(); track error.kind) {
-                        <div class="text-danger pt-1">{{ error.message }}</div>
+            <mat-divider></mat-divider>
+
+            <div class="d-flex flex-column gap-3">
+                <div class="sub-header">Video Details</div>   
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <button matButton="outlined" (click)="fileSelector.click()" type="button">
+                        Upload Video
+                    </button>
+                    @if (videoAssignmentForm.file().value()) {
+                        <span class="ms-2">{{ videoAssignmentForm.file().value().name }}</span>
+                    } @else {
+                        <span class="ms-2 fst-italic">No video selected</span>
                     }
+                </div>
+                <input type="file" accept="video/*" #fileSelector (change)="onFileSelected($event)">
+                @if (videoPreviewUrl()) {
+                    <div class="row pb-3 row-gap-3">
+                        <div class="col-12 col-sm-8">
+                            <video #previewVideo class="video-preview rounded" controls [src]="videoPreviewUrl()"
+                                (loadedmetadata)="onVideoMetadataLoaded($event)"
+                                (timeupdate)="onPreviewTimeUpdate()"></video>
+                        </div>
+                        <div class="col-12 col-sm-4 d-flex flex-column">
+                            <div class="text-center">
+                                Drag the handles to set the video start and end times.
+                            </div>
+                            <mat-slider [min]="0" [max]="videoDuration()" [step]="1" [disabled]="!videoDuration()" showTickMarks>
+                                <input matSliderStartThumb [value]="videoAssignmentFormModel().startTime" (input)="onStartTimeInput($any($event.target).value)">
+                                <input matSliderEndThumb [value]="videoAssignmentFormModel().endTime" (input)="onEndTimeInput($any($event.target).value)">
+                            </mat-slider>
+                            <div class="timeline-values">
+                                <span>Start: {{ videoAssignmentFormModel().startTime }}s</span>
+                                <span>End: {{ videoAssignmentFormModel().endTime }}s</span>
+                            </div>
+                        </div>
+                    </div>
                 }
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Title</mat-label>
+                        <input matInput [field]="videoAssignmentForm.title">
+                    </mat-form-field>
+                    @if (videoAssignmentForm.title().invalid() && videoAssignmentForm.title().touched()) {
+                        @for (error of videoAssignmentForm.title().errors(); track error.kind) {
+                            <div class="text-danger pt-1">{{ error.message }}</div>
+                        }
+                    }
+                </div>
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Description</mat-label>
+                        <textarea matInput [field]="videoAssignmentForm.description"></textarea>
+                    </mat-form-field>
+                    @if (videoAssignmentForm.description().invalid() && videoAssignmentForm.description().touched()) {
+                        @for (error of videoAssignmentForm.description().errors(); track error.kind) {
+                            <div class="text-danger pt-1">{{ error.message }}</div>
+                        }
+                    }
+                </div>
             </div>
-            <div class="d-flex flex-column">
-                <mat-form-field subscriptSizing="dynamic" appearance="outline">
-                    <mat-label>Description</mat-label>
-                    <input matInput [field]="videoAssignmentForm.description">
-                </mat-form-field>
-                @if (videoAssignmentForm.description().invalid() && videoAssignmentForm.description().touched()) {
-                    @for (error of videoAssignmentForm.description().errors(); track error.kind) {
-                        <div class="text-danger pt-1">{{ error.message }}</div>
+            <mat-divider></mat-divider>
+
+            <div class="d-flex flex-column gap-3">
+                <div class="sub-header">Quiz Question</div>
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Pause Time (seconds)</mat-label>
+                        <input matInput type="number" [field]="videoAssignmentForm.quizQuestion.pauseTime">
+                    </mat-form-field>
+                    @if (videoAssignmentForm.quizQuestion.pauseTime().invalid() && videoAssignmentForm.quizQuestion.pauseTime().touched()) {
+                        @for (error of videoAssignmentForm.quizQuestion.pauseTime().errors(); track error.kind) {
+                            <div class="text-danger pt-1">{{ error.message }}</div>
+                        }
                     }
-                }
+                </div>
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Question</mat-label>
+                        <textarea matInput [field]="videoAssignmentForm.quizQuestion.question"></textarea>
+                    </mat-form-field>
+                    @if (videoAssignmentForm.quizQuestion.question().invalid() && videoAssignmentForm.quizQuestion.question().touched()) {
+                        @for (error of videoAssignmentForm.quizQuestion.question().errors(); track error.kind) {
+                            <div class="text-danger pt-1">{{ error.message }}</div>
+                        }
+                    }
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="choices-title">Choices</div>
+                        <button matButton="outlined" type="button" (click)="addChoice()"
+                            [hidden]="videoAssignmentForm.quizQuestion.choices[0].choiceText().disabled()">
+                            Add Choice
+                        </button>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        @for (choice of videoAssignmentFormModel().quizQuestion.choices; track $index) {
+                            <div class="choice-row d-flex align-items-center gap-2">
+                                <input class="choice-checkbox" type="checkbox"
+                                    [field]="videoAssignmentForm.quizQuestion.choices[$index].isCorrect"
+                                    (change)="enforceSingleCorrect($index)">
+                                <mat-form-field class="flex-grow-1" subscriptSizing="dynamic" appearance="outline">
+                                    <mat-label>Choice {{ $index + 1 }}</mat-label>
+                                    <input matInput [field]="videoAssignmentForm.quizQuestion.choices[$index].choiceText">
+                                </mat-form-field>
+                                <button mat-icon-button class="remove-choice" type="button" (click)="removeChoice($index)"
+                                    [disabled]="videoAssignmentForm.quizQuestion.choices[$index].choiceText().disabled()" aria-label="Remove choice">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Answer Explanation</mat-label>
+                        <textarea matInput [field]="videoAssignmentForm.quizQuestion.explanation"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="d-flex flex-column gap-3">
+                <div class="sub-header">Players</div>
+                <div class="d-flex flex-column">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                        <mat-label>Assigned Players*</mat-label>
+                        <mat-chip-grid #playerChipGrid aria-label="Assigned players">
+                            @for (player of videoAssignmentFormModel().assignedPlayers; track player.id) {
+                                <mat-chip-row [removable]="true" (removed)="removePlayer(player.id)">
+                                    <mat-icon matChipAvatar>person</mat-icon>
+                                    <div class="chip-text">
+                                        <span class="name">{{ player.fullName }}</span>
+                                    </div>
+                                    <button matChipRemove type="button" aria-label="Remove player">
+                                        <mat-icon>close</mat-icon>
+                                    </button>
+                                </mat-chip-row>
+                            }
+                    
+                            <input #playerChipInput="matChipInput" (input)="playerInputText.set($any($event.target).value)"
+                                (blur)="videoAssignmentForm.assignedPlayers().markAsTouched()" placeholder="Type a player's name"
+                                [matChipInputFor]="playerChipGrid" [matChipInputSeparatorKeyCodes]="separatorKeys" [matAutocomplete]="playerAutoComplete" #playerAutoCompleteTrigger="matAutocompleteTrigger"/>
+                        </mat-chip-grid>
+                    
+                        <mat-autocomplete #playerAutoComplete="matAutocomplete" (optionSelected)="handlePlayerSelected($event)">
+                            @for (player of filteredPlayers(); track player.id) {
+                            <mat-option [value]="player">
+                                <div class="option-text">
+                                    <span class="me-1">{{ player.fullName }}</span>
+                                </div>
+                            </mat-option>
+                            <hr class="m-0" />
+                            }
+                        </mat-autocomplete>
+                    </mat-form-field>
+                    @if (videoAssignmentForm.assignedPlayers().invalid() && videoAssignmentForm.assignedPlayers().touched()) {
+                        @for (error of videoAssignmentForm.assignedPlayers().errors(); track error.kind) {
+                            <div class="text-danger pt-1">{{ error.message }}</div>
+                        }
+                    }
+                </div>
             </div>
         </form>
     </div>
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button matButton mat-dialog-close>Close</button>
-    <button matButton="filled" type="submit">
-        <mat-icon>save</mat-icon>
+    <button matButton mat-dialog-close>Cancel</button>
+    <button matButton="filled" type="submit" (click)="submit()">
         Save
     </button>
 </mat-dialog-actions>

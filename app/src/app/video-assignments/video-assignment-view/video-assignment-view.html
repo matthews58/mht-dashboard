@@ -1,0 +1,53 @@
+<div class="video-assignment-view"
+  [class.video-assignment-view--single]="!quizActive() && selectedChoiceIndex() === null">
+  @if (quizActive() || selectedChoiceIndex() !== null) {
+    <div class="quiz-panel">
+      <mat-accordion class="quiz-accordion" multi>
+        <mat-expansion-panel [expanded]="selectedChoiceIndex() == null">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon>quiz</mat-icon>
+              Question
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+  
+          <p class="quiz-question">{{ videoAssignment().quizQuestion.question }}</p>
+  
+          <div class="quiz-choices">
+            @for (choice of videoAssignment().quizQuestion.choices; track $index) {
+              <button type="button" class="choice-button" [class.is-selected]="selectedChoiceIndex() === $index" (click)="selectedChoiceIndex.set($index)">
+                <span class="choice-label">{{ choice.choiceText }}</span>
+              </button>
+            }
+          </div>
+        </mat-expansion-panel>
+  
+        @if (selectedChoiceIndex() !== null) {
+          <mat-expansion-panel [expanded]="selectedChoiceIndex() !== null">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon>chat</mat-icon>
+                Explanation
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <p class="quiz-selection-result" [class.correct]="isSelectedChoiceCorrect()">
+              {{ isSelectedChoiceCorrect() ? 'Correct!' : 'Incorrect!' }}
+            </p>
+  
+            <div class="quiz-explanation">
+              <p>{{ videoAssignment().quizQuestion.explanation }}</p>
+            </div>
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+    </div>
+  }
+
+  <div class="video-pane">
+    <video #videoPlayer class="video-player shadow-sm" controls preload="metadata" playsinline
+      [src]="videoAssignment().videoUrl" (loadedmetadata)="onLoadedMetadata(videoPlayer)"
+      (timeupdate)="onTimeUpdate(videoPlayer)" (seeking)="onSeeking(videoPlayer)" (play)="onPlay(videoPlayer)">
+    </video>
+  </div>
+</div>
